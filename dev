@@ -1,0 +1,226 @@
+## Sample_Maven: (check in workspace for directory)
+
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/DhilipDK18/sample_maven.git', branch: 'main'
+            }
+        }
+        stage('Compile') {
+            steps {
+                script {
+                    sh 'mvn -f maven_java/pom.xml compile'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    sh 'mvn -f maven_java/pom.xml test'
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                script {
+                    sh 'mvn -f maven_java/pom.xml package'
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                script {
+                    echo 'Deployment stage - add deployment steps here'
+                }
+            }
+        }
+    }
+}
+
+#web_app
+
+pipeline {
+    agent any
+     stages {
+        stage('Git Checkout') {
+     steps {
+	git branch: 'main', changelog: false, poll: false, url: 'https://github.com/DhilipDK18/Maven_webapp.git'
+            }
+        }
+        stage('Compile')
+        {
+            steps
+            {
+     sh "mvn -f Maven_webapp/pom.xml clean compile"
+            }
+        }
+        stage('Build')
+        {
+            steps
+            {
+     sh "mvn -f Maven_webapp/pom.xml install -DskipTest"
+            }
+        }
+        stage("Test Cases")
+        {
+            steps
+            {
+     sh "mvn -f Maven_webapp/pom.xml test"
+            }
+        }
+        stage("Deploy")
+        {
+            steps{
+                sh 'cp /var/lib/jenkins/workspace/webapp/Maven_webapp/target/Maven_webapp.war /opt/apache-tomcat-9.0.89/webapps'
+            }
+        }
+        
+    }
+}
+#ansible opening the dir.pwd
+
+- name: Open the file
+  hosts: localhost
+  tasks:
+    - name: open the file
+      shell: |
+        pwd
+        ls -la
+      register: res
+
+    - name: Printing
+      debug:
+        var: res.stdout_lines
+
+#open file using cat
+
+---
+- name: open the file
+  hosts: localhost
+  tasks: 
+    - name: open the file
+      shell: cat /home/dhilip/Documents/sample.txt
+      register: file
+
+    - name: print the result
+      debug:
+        var:  file.stdout_lines
+
+#create new dir and go and create file
+
+---
+- name: create new directory and file
+  hosts: localhost
+  tasks:
+    - name: create a new directory
+      shell:
+        mkdir -p /home/dhilip/Documents/dir
+        cd /home/dhilip/Documents/dir
+        touch newfile.txt
+
+    - name: verify
+      shell: ls -l /home/dhilip/Documents/dir
+      register:  result
+
+    - name: print
+      debug:
+        var: result.stdout_lines
+        
+# Copy the existing files into dir
+
+---
+- name: copy the existing file into dir
+  hosts: localhost
+  tasks:
+    - name: copy the file
+      copy:
+        src: /home/dhilip/Documents/sample.txt
+        dest: /home/dhilip/Documents/dir
+
+    - name: copy the file into dir
+      shell: ls -l /home/dhilip/Documents/dir
+      register: res
+
+    - name: print
+      debug:
+        var: res.stdout_lines
+        
+2. new inventory file:
+
+#inventory file:
+[new_servers]
+localhost ansible_connection=local
+
+#play.yml:
+---
+- name:
+  hosts: new_servers
+  tasks: 
+    - name: ping the server
+      ping:
+
+#ansible.cfg:
+[defaults]
+inventory = home/Doc/dir/inventory.ini
+
+3.#installing packages
+---
+- name: Install Packages
+  hosts: all
+  become: yes
+  tasks:
+    - name: update apt caches
+      apt:
+        update_cache: yes
+
+    - name: Install packages
+      apt:
+        name:
+          - git
+          - curl
+        state: present
+        
+  run:ansible-playbook ins_pack.yml --ask-become-pass
+
+#4 Service
+
+#serv.yml in Documents:
+---
+- name: Test playbook
+  hosts: localhost
+  become: yes
+  roles: 
+    - my_role
+
+#tasks: in my_role /etc
+
+--
+- name: Ensure snapd is there
+  apt:
+    name: snapd
+    state: present
+  become: yes
+
+- name: snapd is running
+  service:
+    name: snapd
+    state: started
+    enabled: yes
+  become: yes
+  notify: restart snapd
+
+#handler: in my_role
+
+---
+- name: restart snapd
+  service:
+    name: snapd
+    state: restarted
+  become: yes
+
+# run the serv.yml 
+# systemctl status snapd
+
+
