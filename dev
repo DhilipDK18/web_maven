@@ -79,6 +79,8 @@ pipeline {
         
     }
 }
+to run(for permission): chmod 777 webapps/
+
 #ansible opening the dir.pwd
 
 - name: Open the file
